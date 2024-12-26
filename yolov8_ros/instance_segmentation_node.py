@@ -1,9 +1,7 @@
-from yolov8_ros import *
-
 import cv2
 import random
 import numpy as np
-from typing import List, Dict, Tuple
+from typing import List, Dict
 
 import rclpy
 from rclpy.node import Node
@@ -18,7 +16,6 @@ from ultralytics import YOLO
 from ultralytics.engine.results import Results
 from ultralytics.engine.results import Boxes
 from ultralytics.engine.results import Masks
-from ultralytics.engine.results import Keypoints
 
 from sensor_msgs.msg import Image
 from interfaces_pkg.msg import Point2D
@@ -27,16 +24,24 @@ from interfaces_pkg.msg import Mask
 from interfaces_pkg.msg import Detection
 from interfaces_pkg.msg import DetectionArray
 
+from yolov8_ros import get_path, check_and_download_model
+
 #---TODO-------------------------------------
-SUB_TOPIC_NAME = 'topic_raw_img'
+SUB_TOPIC_NAME = 'image_raw'
 PUB_TOPIC_NAME = 'topic_masking_img'
 SHOW_IMAGE = True
 TIMER = 0.1
 QUE = 1
 
-MODEL = get_path('best.pt') # lib 안에 위치한 pt 파일명
-DEVICE = "cpu"
-#DEVICE = "cuda:0"
+models = ["l207.pt", "m123.pt", "s94.pt",  "sim.pt",  "x274.pt"]
+MODEL_NAME = models[0]
+
+LANE2_CLASS_NAME = "lane2"
+MODEL = get_path(file_name=MODEL_NAME)
+check_and_download_model(MODEL_NAME, MODEL)
+    
+#DEVICE = "cpu"
+DEVICE = "cuda:0"
 THRESHOLD = 0.5 # 0.1
 #--------------------------------------------
 
@@ -104,8 +109,8 @@ class SegmentationNode(Node):
         for box_data in results.boxes:
             msg = BoundingBox2D()
             box = box_data.xywh[0]
-            msg.center.x = float(box[0]) # x
-            msg.center.y = float(box[1]) # y
+            msg.center.position.x = float(box[0]) # x
+            msg.center.position.y = float(box[1]) # y
             msg.size.x = float(box[2])   # w
             msg.size.y = float(box[3])   # h
             boxes_list.append(msg)
